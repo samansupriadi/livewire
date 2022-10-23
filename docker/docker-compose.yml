@@ -1,0 +1,86 @@
+version: "3.7"
+
+services:
+    web:
+        image: nginx
+        restart: always
+        hostname: weblive
+        container_name: weblive
+        volumes:
+            - ../.:/app 
+            - ./httpd:/etc/nginx/conf.d/
+        ports:
+            - "3000:80"
+        networks:
+            - webnet
+        depends_on:
+            - live
+
+    live:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        image: live
+        container_name: live
+        hostname: live
+        volumes:
+            - ../.:/app
+        networks:
+            - webnet
+        depends_on:
+            - db
+    
+    db:
+        image: mysql:8.0.30
+        command: --default-authentication-plugin=mysql_native_password
+        hostname: db
+        container_name: db
+        restart: always
+        volumes:
+            - db3:/var/lib/mysql
+        networks:
+            - webnet
+        environment:
+            MYSQL_ROOT_PASSWORD: var0kah
+            # MYSQL_DATABASE: app_db
+            # MYSQL_USER: db_user
+            # MYSQL_PASSWORD: secret
+
+    
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: pma
+        links:
+            - db
+        environment:
+            PMA_HOST: db
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+            restart: always
+        ports:
+            - '8081:80'
+        networks:
+            - webnet
+        
+    # adminer:
+    #     image: adminer
+    #     restart: always
+    #     container_name: adminer
+    #     hostname: adminer
+    #     ports:
+    #     - "8080:8080"
+    #     networks:
+    #     - webnet
+    #     links:
+    #     - db
+    #     depends_on:
+    #     - db 
+        
+networks:
+  webnet:
+    external:
+      name: webnet
+volumes:
+    db3:
+        external:
+            name: db3
